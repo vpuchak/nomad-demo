@@ -50,6 +50,12 @@ job "fabio" {
           path = "/health"
           interval = "1s"
           timeout = "1s"
+
+          check_restart {
+            limit = 3
+            grace = "90s"
+            ignore_warnings = false
+          }
         }
       }
     }
