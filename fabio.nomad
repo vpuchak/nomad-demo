@@ -1,36 +1,55 @@
 job "fabio" {
   datacenters = ["dc1"]
-  type = "system"
-  update {
-    stagger = "5s"
-    max_parallel = 1
-  }
+
+  type = "service"
 
   group "fabio" {
-    task "fabio" {
-      driver = "exec"
+    count = 1
 
+    task "fabio" {
+      driver = "raw_exec"
       config {
-        command = "fabio-1.5.8-go1.10-linux_amd64"
-        args = ["-proxy.addr=:80", "-registry.consul.addr", "127.0.0.1:8500", "-ui.addr=:9998"]
+        command = "fabio"
       }
 
       artifact {
-        source = https://github.com/fabiolb/fabio/releases/download/v1.5.8/fabio-1.5.8-go1.10-linux_amd64"
+        source = "https://github.com/fabiolb/fabio/releases/download/v1.5.3/fabio-1.5.3-go1.9.2-${attr.kernel.name}_${attr.cpu.arch}"
+        destination = "fabio"
+        mode = "file"
+      }
+
+      env {
+        registry_consul_addr = "127.0.0.1:8500"
+        proxy_addr = ":${NOMAD_PORT_proxy}"
+
+        registry_consul_register.addr = ":${NOMAD_PORT_ui}"
+        ui_addr = ":${NOMAD_PORT_ui}"
       }
 
       resources {
-        cpu = 20
-        memory = 64
         network {
           mbits = 1
-
-          port "http" {
+          port "proxy" {
             static = 80
           }
+
           port "ui" {
             static = 9998
           }
+        }
+      }
+
+      service {
+        port = "proxy"
+
+        name = "fabio"
+
+        check {
+          type = "http"
+          port = "ui"
+          path = "/health"
+          interval = "1s"
+          timeout = "1s"
         }
       }
     }
