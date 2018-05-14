@@ -6,7 +6,7 @@ job "backend" {
 
   update {
     stagger      = "30s"
-    max_parallel = 2
+    max_parallel = 1
   }
 
   group "webs" {
@@ -16,7 +16,7 @@ job "backend" {
       driver = "docker"
 
       config {
-        image = "gcr.io/google-samples/hello-app:1.0"
+        image = "docker.io/vpuchak/hello-app-go:1.0"
 
         port_map {
           http = 8080
@@ -32,6 +32,12 @@ job "backend" {
           path     = "/"
           interval = "10s"
           timeout  = "2s"
+          
+          check_restart {
+            limit = 3
+            grace = "90s"
+            ignore_warnings = false
+          }
         }
       }
 
@@ -42,12 +48,12 @@ job "backend" {
       }
 
       resources {
-        cpu    = 500 # MHz
-        memory = 128 # MB
+        cpu    = 128 # MHz
+        memory = 32 # MB
 
         network {
-          mbits = 100
-          
+          mbits = 1
+
           port "http" {}
         }
       }
